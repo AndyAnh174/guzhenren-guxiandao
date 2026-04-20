@@ -27,7 +27,8 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    maven { url "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/" }
+    flatDir { dirs 'libs' }
 }
 
 base {
@@ -118,6 +119,9 @@ configurations {
 }
 
 dependencies {
+    // Guzhenren mod (compile-only, provided at runtime via mods folder)
+    compileOnly "blank:guzhenren-1.21.1"
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

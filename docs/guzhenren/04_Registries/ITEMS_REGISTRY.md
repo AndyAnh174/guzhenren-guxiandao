@@ -8,13 +8,14 @@ The mod uses specific prefixes to categorize items. Understanding these is key t
 
 | Prefix / Keyword | Meaning | Context |
 | :--- | :--- | :--- |
-| `weilianhua` | Unrefined (Chưa luyện hóa) | 1st Tier / Basic items. |
-| `erzhuan` | 2nd Tier (Nhị chuyển) | Mid-tier upgrades. |
-| `sanzhuan` | 3rd Tier (Tam chuyển) | High-tier upgrades. |
-| `sizhuan` | 4th Tier (Tứ chuyển) | Elite-tier upgrades. |
-| `wuzhuan` | 5th Tier (Ngũ chuyển) | Top-tier / Legendary. |
-| `gufang` | Gu Recipe (Cổ phương) | Recipes used for crafting Gu. |
-| `cangufang` | Fragmented Recipe | Incomplete recipes. |
+| `weilianhua` | Chưa luyện hóa (Unrefined) | **Riêng biệt, KHÔNG phải tier 1** — Cổ thô chưa tinh luyện, dạng nguyên liệu trước khi vào hệ thống chuyển. |
+| `yizhuan` | Nhất chuyển | 1st Tier. |
+| `erzhuan` | Nhị chuyển | 2nd Tier. |
+| `sanzhuan` | Tam chuyển | 3rd Tier. |
+| `sizhuan` | Tứ chuyển | 4th Tier. |
+| `wuzhuan` | Ngũ chuyển | 5th Tier (max hiện tại trong mod gốc). |
+| `gufang` | Cổ phương (Gu Recipe) | Công thức luyện Cổ. |
+| `cangufang` | Tàn Cổ phương | Công thức không đầy đủ. |
 
 ## 2. Key Item Categories
 ### 2.1 Progression Items

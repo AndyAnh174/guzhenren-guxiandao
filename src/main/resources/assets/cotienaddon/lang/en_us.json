@@ -1,0 +1,50 @@
+{
+  "gui.cotienaddon.khong_khieu.title": "Không Khiếu - Cổ Tiên",
+  "gui.cotienaddon.dot_pha": "Đột Phá / Thăng Tiên",
+  "gui.cotienaddon.nhan_khi": "Nhân Khí: %s",
+  "gui.cotienaddon.phuc_dia_grade": "Phúc Địa dự kiến: %s",
+  "gui.cotienaddon.warning_irreversible": "⚠ KHÔNG THỂ QUAY LUI SAU KHI THỰC HIỆN ⚠",
+
+  "gui.cotienaddon.grade.0": "Chưa xác định",
+  "gui.cotienaddon.grade.1": "Hạ đẳng Phúc Địa",
+  "gui.cotienaddon.grade.2": "Trung đẳng Phúc Địa",
+  "gui.cotienaddon.grade.3": "Thượng đẳng Phúc Địa",
+  "gui.cotienaddon.grade.4": "Siêu đẳng Phúc Địa",
+
+  "gui.cotienaddon.phase.0": "Trạng thái: Ngũ Chuyển Đỉnh Phong",
+  "gui.cotienaddon.phase.1": "Đang: Phá Toái Không Khiếu...",
+  "gui.cotienaddon.phase.2": "Đang: Nạp Khí (Thiên - Địa - Nhân)...",
+  "gui.cotienaddon.phase.3": "Đang: Ngưng Khiếu + Phóng Cổ...",
+  "gui.cotienaddon.phase.4": "✦ Cổ Tiên ✦",
+
+  "key.cotienaddon.open_khong_khieu": "Mở Không Khiếu",
+  "key.cotienaddon.open_phuc_dia": "Mở Phúc Địa",
+  "key.categories.cotienaddon": "Cổ Tiên Addon",
+
+  "gui.cotienaddon.msg.ngung_khieu": "✦ Ba luồng Khí hòa quyện — Ngưng Khiếu! Hãy phóng Bản Mệnh Cổ!",
+  "gui.cotienaddon.msg.ascend_success": "✦ THĂNG TIÊN THÀNH CÔNG ✦  Phúc Địa: %s",
+  "gui.cotienaddon.msg.ascend_fail": "✦ THĂNG TIÊN THẤT BẠI — %s ✦  Thân tử đạo tiêu!",
+
+  "gui.cotienaddon.phuc_dia.title": "Phúc Địa - Cổ Tiên",
+  "gui.cotienaddon.phuc_dia.tab.overview": "Tổng quan",
+  "gui.cotienaddon.phuc_dia.tab.members": "Quản lý Khách",
+  "gui.cotienaddon.phuc_dia.tab.ecosystem": "Hệ sinh thái",
+
+  "gui.cotienaddon.phuc_dia.grade": "Cấp Phúc Địa: %s",
+  "gui.cotienaddon.phuc_dia.tien_nguyen": "Tiên Nguyên: %s",
+  "gui.cotienaddon.phuc_dia.thien_khi": "Thiên Khí: %s",
+  "gui.cotienaddon.phuc_dia.dia_khi": "Địa Khí: %s",
+  "gui.cotienaddon.phuc_dia.slot": "Vùng #%s",
+
+  "gui.cotienaddon.phuc_dia.btn.enter": "Vào Phúc Địa",
+  "gui.cotienaddon.phuc_dia.btn.exit": "Rời Phúc Địa",
+  "gui.cotienaddon.phuc_dia.btn.invite": "Mời",
+  "gui.cotienaddon.phuc_dia.btn.kick": "Kick",
+  "gui.cotienaddon.phuc_dia.invite_hint": "Nhập tên người chơi...",
+  "gui.cotienaddon.phuc_dia.no_members": "(Chưa có khách nào)",
+  "gui.cotienaddon.phuc_dia.not_ascended": "✦ Cần Thăng Tiên trước!",
+  "gui.cotienaddon.phuc_dia.enter": "✦ Bước vào Phúc Địa...",
+  "gui.cotienaddon.phuc_dia.exit": "✦ Rời khỏi Phúc Địa.",
+  "gui.cotienaddon.phuc_dia.invited_by": "✦ Bạn được %s mời vào Phúc Địa!",
+  "gui.cotienaddon.phuc_dia.ecosystem.coming_soon": "(Hệ sinh thái — Phase 5)"
+}
