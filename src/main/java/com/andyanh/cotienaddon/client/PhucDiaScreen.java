@@ -20,9 +20,17 @@ public class PhucDiaScreen extends Screen {
 
     private static final ResourceLocation BG =
             ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "textures/gui/phuc_dia_bg.png");
+    private static final ResourceLocation BTN_TEX =
+            ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "textures/gui/button_normal.png");
+    private static final ResourceLocation TAB_ACTIVE =
+            ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "textures/gui/tab_active.png");
+    private static final ResourceLocation TAB_INACTIVE =
+            ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "textures/gui/tab_inactive.png");
+    private static final ResourceLocation ROW_STRIPE =
+            ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "textures/gui/row_stripe.png");
 
     private final CoTienData data;
-    private int activeTab = 0; // 0=Tổng quan, 1=Quản lý Khách, 2=Hệ sinh thái
+    private int activeTab = 0;
 
     private static final int W = 256;
     private static final int H = 220;
@@ -41,13 +49,10 @@ public class PhucDiaScreen extends Screen {
         int left = (width - W) / 2;
         int top = (height - H) / 2;
 
-        // Tab buttons
-        addRenderableWidget(Button.builder(Component.translatable("gui.cotienaddon.phuc_dia.tab.overview"), b -> switchTab(0))
-                .bounds(left + 5, top + 5, 85, 18).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.cotienaddon.phuc_dia.tab.members"), b -> switchTab(1))
-                .bounds(left + 95, top + 5, 85, 18).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.cotienaddon.phuc_dia.tab.ecosystem"), b -> switchTab(2))
-                .bounds(left + 185, top + 5, 85, 18).build());
+        // Tab buttons — textured, active/inactive texture swaps each frame
+        addRenderableWidget(makeTabButton(Component.translatable("gui.cotienaddon.phuc_dia.tab.overview"),  0, left + 8,   top + 24, b -> switchTab(0)));
+        addRenderableWidget(makeTabButton(Component.translatable("gui.cotienaddon.phuc_dia.tab.members"),   1, left + 90,  top + 24, b -> switchTab(1)));
+        addRenderableWidget(makeTabButton(Component.translatable("gui.cotienaddon.phuc_dia.tab.ecosystem"), 2, left + 172, top + 24, b -> switchTab(2)));
 
         buildTab(left, top);
     }
@@ -58,8 +63,33 @@ public class PhucDiaScreen extends Screen {
         init();
     }
 
+    private Button makeTabButton(Component label, int tabIdx, int x, int y, Button.OnPress onPress) {
+        return new Button(x, y, 76, 14, label, onPress, supplier -> supplier.get()) {
+            @Override
+            public void renderWidget(GuiGraphics g, int mx, int my, float delta) {
+                ResourceLocation tex = (activeTab == tabIdx) ? TAB_ACTIVE : TAB_INACTIVE;
+                g.blit(tex, getX(), getY(), 0, 0, 76, 14, 76, 14);
+                int color = (activeTab == tabIdx) ? 0xFFFFFF : 0xAAAAAA;
+                g.drawCenteredString(Minecraft.getInstance().font, getMessage(),
+                        getX() + 38, getY() + 3, color);
+            }
+        };
+    }
+
+    private Button makeTexturedButton(Component label, int x, int y, int w, int h, Button.OnPress onPress) {
+        return new Button(x, y, w, h, label, onPress, supplier -> supplier.get()) {
+            @Override
+            public void renderWidget(GuiGraphics g, int mx, int my, float delta) {
+                g.blit(BTN_TEX, getX(), getY(), 0, 0, width, height, 120, 20);
+                int color = isHovered ? 0xFFFFA0 : 0xFFFFFF;
+                g.drawCenteredString(Minecraft.getInstance().font, getMessage(),
+                        getX() + width / 2, getY() + (height - 8) / 2, color);
+            }
+        };
+    }
+
     private void buildTab(int left, int top) {
-        int contentTop = top + 30;
+        int contentTop = top + 42;
         switch (activeTab) {
             case 0 -> buildOverviewTab(left, contentTop);
             case 1 -> buildMembersTab(left, contentTop);
@@ -75,20 +105,17 @@ public class PhucDiaScreen extends Screen {
                 : "";
         boolean inPhucDia = dimKey.equals("cotienaddon:phuc_dia");
 
+        int btnY = top + 150;
         if (inPhucDia) {
-            addRenderableWidget(Button.builder(
-                    Component.translatable("gui.cotienaddon.phuc_dia.btn.exit"), b -> {
-                        PacketDistributor.sendToServer(new TeleportPhucDiaPacket(false));
-                        onClose();
-                    }).bounds(left + W / 2 - 50, top + 150, 100, 20).build());
-        } else {
-            if (data.thangTienPhase >= 4) {
-                addRenderableWidget(Button.builder(
-                        Component.translatable("gui.cotienaddon.phuc_dia.btn.enter"), b -> {
-                            PacketDistributor.sendToServer(new TeleportPhucDiaPacket(true));
-                            onClose();
-                        }).bounds(left + W / 2 - 50, top + 150, 100, 20).build());
-            }
+            addRenderableWidget(makeTexturedButton(
+                    Component.translatable("gui.cotienaddon.phuc_dia.btn.exit"),
+                    left + W / 2 - 60, btnY, 120, 20,
+                    b -> { PacketDistributor.sendToServer(new TeleportPhucDiaPacket(false)); onClose(); }));
+        } else if (data.thangTienPhase >= 4) {
+            addRenderableWidget(makeTexturedButton(
+                    Component.translatable("gui.cotienaddon.phuc_dia.btn.enter"),
+                    left + W / 2 - 60, btnY, 120, 20,
+                    b -> { PacketDistributor.sendToServer(new TeleportPhucDiaPacket(true)); onClose(); }));
         }
     }
 
@@ -166,17 +193,17 @@ public class PhucDiaScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
-        renderBackground(g, mx, my, pt);
+    protected void renderBlurredBackground(float partialTick) {}
 
+    @Override
+    public void render(GuiGraphics g, int mx, int my, float pt) {
         int left = (width - W) / 2;
         int top = (height - H) / 2;
 
-        // Background texture
         g.blit(BG, left, top, 0, 0, W, H, 256, 256);
-        g.drawString(font, title, left + 5, top - 10, 0xFFD700);
+        g.drawCenteredString(font, title, left + W / 2, top + 8, 0xFFD700);
 
-        int contentTop = top + 30;
+        int contentTop = top + 42;
 
         if (activeTab == 0) renderOverviewContent(g, left, contentTop);
         else if (activeTab == 1) renderMembersContent(g, left, contentTop);
@@ -184,18 +211,28 @@ public class PhucDiaScreen extends Screen {
         super.render(g, mx, my, pt);
     }
 
+    private void renderRow(GuiGraphics g, int left, int y, Component text, int color) {
+        g.blit(ROW_STRIPE, left + 10, y - 1, 0, 0, 236, 14, 236, 14);
+        g.drawString(font, text, left + 14, y + 2, color);
+    }
+
     private void renderOverviewContent(GuiGraphics g, int left, int top) {
-        int col = 0xFFFFFF;
-        g.drawString(font, Component.translatable("gui.cotienaddon.phuc_dia.grade",
-                gradeKey(data.phucDiaGrade)), left + 10, top + 5, 0xFFD700);
-        g.drawString(font, Component.translatable("gui.cotienaddon.phuc_dia.tien_nguyen",
-                String.format("%.1f", data.tienNguyen)), left + 10, top + 20, col);
-        g.drawString(font, Component.translatable("gui.cotienaddon.phuc_dia.thien_khi",
-                String.format("%.1f", data.thienKhi)), left + 10, top + 35, 0x55FFFF);
-        g.drawString(font, Component.translatable("gui.cotienaddon.phuc_dia.dia_khi",
-                String.format("%.1f", data.diaKhi)), left + 10, top + 50, 0x55FF55);
-        g.drawString(font, Component.translatable("gui.cotienaddon.phuc_dia.slot",
-                data.phucDiaSlot), left + 10, top + 65, 0xAAAAAA);
+        int rowSpacing = 16;
+        int y = top + 4;
+        renderRow(g, left, y, Component.translatable("gui.cotienaddon.phuc_dia.grade",
+                Component.translatable(gradeKey(data.phucDiaGrade))), 0xFFD700);
+        y += rowSpacing;
+        renderRow(g, left, y, Component.translatable("gui.cotienaddon.phuc_dia.tien_nguyen",
+                String.format("%.1f", data.tienNguyen)), 0xFFFFFF);
+        y += rowSpacing;
+        renderRow(g, left, y, Component.translatable("gui.cotienaddon.phuc_dia.thien_khi",
+                String.format("%.1f", data.thienKhi)), 0x55FFFF);
+        y += rowSpacing;
+        renderRow(g, left, y, Component.translatable("gui.cotienaddon.phuc_dia.dia_khi",
+                String.format("%.1f", data.diaKhi)), 0x55FF55);
+        y += rowSpacing;
+        renderRow(g, left, y, Component.translatable("gui.cotienaddon.phuc_dia.slot",
+                data.phucDiaSlot), 0xAAAAAA);
     }
 
     private void renderMembersContent(GuiGraphics g, int left, int top) {

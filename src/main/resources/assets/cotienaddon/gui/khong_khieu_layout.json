@@ -1,0 +1,64 @@
+{
+  "panel": {
+    "width": 256,
+    "height": 220,
+    "texture": "cotienaddon:textures/gui/khong_khieu_bg.png"
+  },
+  "buttons": [
+    {
+      "id": "dot_pha",
+      "label_key": "gui.cotienaddon.dot_pha",
+      "x_offset_from_center": -60,
+      "y_offset_from_bottom": 30,
+      "width": 120,
+      "height": 20
+    }
+  ],
+  "labels": [
+    {
+      "id": "title",
+      "x_offset_from_center": 0,
+      "y_offset_from_top": 16,
+      "color": "0xFFD700",
+      "centered": true,
+      "stripe": false
+    },
+    {
+      "id": "nhan_khi",
+      "x_offset_from_left": 20,
+      "y_offset_from_top": 64,
+      "color": "0xE0E0E0",
+      "stripe": true
+    },
+    {
+      "id": "grade",
+      "x_offset_from_left": 20,
+      "y_offset_from_top": 84,
+      "color": "0xE0E0E0",
+      "stripe": true
+    },
+    {
+      "id": "gu_usage",
+      "x_offset_from_left": 20,
+      "y_offset_from_top": 104,
+      "color": "0xAAAAAA",
+      "stripe": true
+    },
+    {
+      "id": "phase",
+      "x_offset_from_center": 0,
+      "y_offset_from_top": 124,
+      "color": "0x55FF55",
+      "centered": true,
+      "stripe": true
+    },
+    {
+      "id": "warning",
+      "x_offset_from_center": 0,
+      "y_offset_from_top": 144,
+      "color": "0xFF5555",
+      "centered": true,
+      "stripe": true
+    }
+  ]
+}
