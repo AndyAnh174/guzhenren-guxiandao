@@ -1,14 +1,14 @@
 # Phase 1 — Nền tảng
-**Trạng thái:** 🔲 Chưa bắt đầu
+**Trạng thái:** ✅ Hoàn thành
 
 ## Mục tiêu
 Setup addon project và data model cơ bản.
 
 ## Checklist
-- [ ] Đổi template examplemod → mod ID thực (ví dụ: `cotienaddon`)
-- [ ] Cấu hình `neoforge.mods.toml`: depend vào mod `guzhenren`
-- [ ] Tạo `CoTienData` NeoForge Attachment (độc lập với mod gốc)
-- [ ] Build + chạy thử in-game không crash
+- [x] Đổi template examplemod → mod ID thực (`cotienaddon`, group `com.andyanh.cotienaddon`)
+- [x] Cấu hình `neoforge.mods.toml`: depend vào mod `guzhenren`, versionRange `[0.1,)`
+- [x] Tạo `CoTienData` NeoForge Attachment (`cotienaddon:co_tien_data`)
+- [x] Build + chạy thử in-game không crash
 
 ## CoTienData — Fields
 ```java

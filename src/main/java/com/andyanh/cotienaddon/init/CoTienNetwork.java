@@ -2,6 +2,7 @@ package com.andyanh.cotienaddon.init;
 
 import com.andyanh.cotienaddon.CoTienAddon;
 import com.andyanh.cotienaddon.data.CoTienData;
+import com.andyanh.cotienaddon.item.DinhTienDuItem;
 import com.andyanh.cotienaddon.network.*;
 import com.andyanh.cotienaddon.system.PhucDiaManager;
 import net.guzhenren.network.GuzhenrenModVariables;
@@ -55,15 +56,39 @@ public class CoTienNetwork {
                 TeleportPhucDiaPacket.STREAM_CODEC,
                 CoTienNetwork::handleTeleportPhucDia
         );
+        reg.playToServer(
+                DebugActionPacket.TYPE,
+                DebugActionPacket.STREAM_CODEC,
+                CoTienNetwork::handleDebugAction
+        );
+        reg.playToServer(
+                TeleportDinhTienDuPacket.TYPE,
+                TeleportDinhTienDuPacket.STREAM_CODEC,
+                CoTienNetwork::handleTeleportDinhTienDu
+        );
+        reg.playToServer(
+                SaveLocationPacket.TYPE,
+                SaveLocationPacket.STREAM_CODEC,
+                CoTienNetwork::handleSaveLocation
+        );
     }
 
     // --- Không Khiếu ---
 
+    private static net.minecraft.nbt.CompoundTag buildSyncNBT(ServerPlayer sp) {
+        CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
+        net.minecraft.nbt.CompoundTag tag = data.serializeNBT();
+        // Inject guzhenren vars so client can show conditions
+        var gv = sp.getData(GuzhenrenModVariables.PLAYER_VARIABLES);
+        tag.putDouble("zhuanshu", gv.zhuanshu);
+        tag.putDouble("jieduan", gv.jieduan);
+        return tag;
+    }
+
     private static void handleOpenKhongKhieu(OpenKhongKhieuPacket pkt, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer sp)) return;
-            CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
-            PacketDistributor.sendToPlayer(sp, new SyncCoTienPacket(data.serializeNBT()));
+            PacketDistributor.sendToPlayer(sp, new SyncCoTienPacket(buildSyncNBT(sp)));
         });
     }
 
@@ -72,28 +97,16 @@ public class CoTienNetwork {
             if (!(ctx.player() instanceof ServerPlayer sp)) return;
 
             var guzhenrenVars = sp.getData(GuzhenrenModVariables.PLAYER_VARIABLES);
-            if (guzhenrenVars.zhuanshu != 5.0 || guzhenrenVars.jieduan < 4.0) {
-                CoTienAddon.LOGGER.warn("[CoTienAddon] {} tried to ascend but conditions not met",
-                        sp.getName().getString());
+            if (guzhenrenVars.zhuanshu < 5.0 || guzhenrenVars.jieduan < 4.0) {
+                sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        "§c[Tiên Khiếu] Cần đạt Ngũ Chuyển Đỉnh Phong (zhuanshu=5.0, jieduan≥4) mới có thể Thăng Tiên!"));
                 return;
             }
 
             CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
             if (data.thangTienPhase != 0) return;
 
-            data.thangTienPhase = 1;
-            data.phucDiaGrade = data.calcPhucDiaGrade();
-            sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), data);
-
-            net.guzhenren.GuzhenrenMod.queueServerWork(60, () -> {
-                CoTienData d2 = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
-                if (d2.thangTienPhase == 1) {
-                    d2.thangTienPhase = 2;
-                    sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), d2);
-                    CoTienAddon.LOGGER.info("[CoTienAddon] {} entered Nap Khi phase",
-                            sp.getName().getString());
-                }
-            });
+            com.andyanh.cotienaddon.system.ThangTienManager.startAscension(sp);
         });
     }
 
@@ -102,9 +115,7 @@ public class CoTienNetwork {
     private static void handleOpenPhucDia(OpenPhucDiaPacket pkt, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer sp)) return;
-            CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
-            // Reuse SyncCoTienPacket — data đầy đủ rồi
-            PacketDistributor.sendToPlayer(sp, new SyncCoTienPacket(data.serializeNBT()));
+            PacketDistributor.sendToPlayer(sp, new SyncCoTienPacket(buildSyncNBT(sp)));
         });
     }
 
@@ -184,6 +195,69 @@ public class CoTienNetwork {
             } else {
                 PhucDiaManager.teleportOutOfPhucDia(sp);
             }
+        });
+    }
+
+    private static void handleDebugAction(DebugActionPacket pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer sp)) return;
+            CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
+            switch (pkt.action()) {
+                case DebugActionPacket.ASCEND -> {
+                    if (data.thangTienPhase != 0) {
+                        sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e[Debug] Dang phase " + data.thangTienPhase + ", reset truoc!"));
+                        return;
+                    }
+                    // Pre-fill chỉ khi nk > 0, nếu không để checkNapKhi tự xử lý
+                    double nk = data.calcNhanKhi();
+                    if (nk > 0) {
+                        data.thienKhi = Math.max(data.thienKhi, nk * 0.5 + 1);
+                        data.diaKhi   = Math.max(data.diaKhi,   nk * 0.5 + 1);
+                    }
+                    sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), data);
+                    com.andyanh.cotienaddon.system.ThangTienManager.startAscension(sp);
+                }
+                case DebugActionPacket.COMPLETE -> {
+                    data.thangTienPhase = 3;
+                    sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), data);
+                    com.andyanh.cotienaddon.system.ThangTienManager.completeAscension(sp);
+                }
+                case DebugActionPacket.RESET -> {
+                    data.thangTienPhase = 0;
+                    data.thienKhi = 0;
+                    data.diaKhi = 0;
+                    sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), data);
+                    sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e[Debug] Reset phase=0"));
+                }
+            }
+        });
+    }
+
+    // --- Định Tiên Du ---
+
+    private static void handleSaveLocation(SaveLocationPacket pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer sp)) return;
+            CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
+            if (pkt.action() == SaveLocationPacket.ACTION_SAVE) {
+                if (data.savedLocations.size() >= CoTienData.MAX_SAVED_LOCATIONS) return;
+                data.savedLocations.add(new CoTienData.SavedLocation(pkt.name(), pkt.x(), pkt.y(), pkt.z()));
+            } else if (pkt.action() == SaveLocationPacket.ACTION_DELETE) {
+                int idx = pkt.deleteIndex();
+                if (idx >= 0 && idx < data.savedLocations.size()) {
+                    data.savedLocations.remove(idx);
+                }
+            }
+            sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), data);
+            // Sync back so client sees updated list
+            PacketDistributor.sendToPlayer(sp, new SyncCoTienPacket(buildSyncNBT(sp)));
+        });
+    }
+
+    private static void handleTeleportDinhTienDu(TeleportDinhTienDuPacket pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer sp)) return;
+            DinhTienDuItem.requestTeleport(sp, pkt.x(), pkt.y(), pkt.z());
         });
     }
 

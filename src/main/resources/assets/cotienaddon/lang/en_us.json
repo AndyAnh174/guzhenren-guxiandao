@@ -46,5 +46,8 @@
   "gui.cotienaddon.phuc_dia.enter": "✦ Bước vào Phúc Địa...",
   "gui.cotienaddon.phuc_dia.exit": "✦ Rời khỏi Phúc Địa.",
   "gui.cotienaddon.phuc_dia.invited_by": "✦ Bạn được %s mời vào Phúc Địa!",
-  "gui.cotienaddon.phuc_dia.ecosystem.coming_soon": "(Hệ sinh thái — Phase 5)"
+  "gui.cotienaddon.phuc_dia.ecosystem.coming_soon": "(Hệ sinh thái — Phase 5)",
+
+  "item.cotienaddon.dinh_tien_du": "Định Tiên Du Cổ",
+  "item.cotienaddon.tien_nguyen": "Tiên Nguyên"
 }

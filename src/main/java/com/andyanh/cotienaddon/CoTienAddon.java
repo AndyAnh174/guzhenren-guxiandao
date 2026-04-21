@@ -1,6 +1,8 @@
 package com.andyanh.cotienaddon;
 
 import com.andyanh.cotienaddon.init.CoTienAttachments;
+import com.andyanh.cotienaddon.init.CoTienCreativeTabs;
+import com.andyanh.cotienaddon.init.CoTienItems;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -14,6 +16,8 @@ public class CoTienAddon {
 
     public CoTienAddon(IEventBus modEventBus) {
         CoTienAttachments.ATTACHMENTS.register(modEventBus);
+        CoTienItems.ITEMS.register(modEventBus);
+        CoTienCreativeTabs.TABS.register(modEventBus);
         LOGGER.info("[CoTienAddon] Loaded - Co Tien system initializing...");
     }
 }

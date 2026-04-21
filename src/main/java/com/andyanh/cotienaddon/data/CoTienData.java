@@ -42,6 +42,20 @@ public class CoTienData {
     // --- Tiên Nguyên ---
     public double tienNguyen = 0;
 
+    // --- Định Tiên Du saved locations ---
+    public static class SavedLocation {
+        public String name;
+        public double x, y, z;
+        public SavedLocation(String name, double x, double y, double z) {
+            this.name = name; this.x = x; this.y = y; this.z = z;
+        }
+    }
+    public List<SavedLocation> savedLocations = new ArrayList<>();
+    public static final int MAX_SAVED_LOCATIONS = 5;
+
+    // --- Phase 2 timer ---
+    public int napKhiTick = 0;   // ticks spent in phase 2 (nap khi), needs ~3600 to complete
+
     // Permission bits
     public static final int PERM_BUILD       = 1;       // Bit 0: Xây/Phá hủy
     public static final int PERM_CONTAINERS  = 1 << 1;  // Bit 1: Tương tác Vật chứa
@@ -69,6 +83,14 @@ public class CoTienData {
              + guCrafted * 10;
     }
 
+    // Client-side check (zhuanshu phải được sync từ mod gốc)
+    public double zhuanshu = 0;   // được set khi sync từ guzhenren vars
+    public double jieduan = 0;
+
+    public boolean canStartAscension() {
+        return zhuanshu >= 5.0 && jieduan >= 4.0 && thangTienPhase == 0 && phucDiaSlot == -1;
+    }
+
     public int calcPhucDiaGrade() {
         double nk = calcNhanKhi();
         if (nk >= 100000) return 4;
@@ -93,6 +115,7 @@ public class CoTienData {
         tag.putString("phucDiaOwner", phucDiaOwnerUUID);
         tag.putInt("phucDiaSlot", phucDiaSlot);
         tag.putDouble("tienNguyen", tienNguyen);
+        tag.putInt("napKhiTick", napKhiTick);
 
         CompoundTag wlTag = new CompoundTag();
         for (int i = 0; i < whitelist.size(); i++) {
@@ -104,6 +127,19 @@ public class CoTienData {
         CompoundTag permTag = new CompoundTag();
         permissions.forEach(permTag::putInt);
         tag.put("permissions", permTag);
+
+        CompoundTag locTag = new CompoundTag();
+        locTag.putInt("size", savedLocations.size());
+        for (int i = 0; i < savedLocations.size(); i++) {
+            SavedLocation loc = savedLocations.get(i);
+            CompoundTag lt = new CompoundTag();
+            lt.putString("name", loc.name);
+            lt.putDouble("x", loc.x);
+            lt.putDouble("y", loc.y);
+            lt.putDouble("z", loc.z);
+            locTag.put("loc" + i, lt);
+        }
+        tag.put("savedLocations", locTag);
 
         return tag;
     }
@@ -124,6 +160,20 @@ public class CoTienData {
         data.phucDiaOwnerUUID = tag.getString("phucDiaOwner");
         data.phucDiaSlot = tag.contains("phucDiaSlot") ? tag.getInt("phucDiaSlot") : -1;
         data.tienNguyen = tag.getDouble("tienNguyen");
+        data.napKhiTick = tag.contains("napKhiTick") ? tag.getInt("napKhiTick") : 0;
+        data.zhuanshu = tag.contains("zhuanshu") ? tag.getDouble("zhuanshu") : 0;
+        data.jieduan  = tag.contains("jieduan")  ? tag.getDouble("jieduan")  : 0;
+
+        if (tag.contains("savedLocations")) {
+            CompoundTag locTag = tag.getCompound("savedLocations");
+            int locSize = locTag.getInt("size");
+            for (int i = 0; i < locSize; i++) {
+                CompoundTag lt = locTag.getCompound("loc" + i);
+                data.savedLocations.add(new SavedLocation(
+                        lt.getString("name"),
+                        lt.getDouble("x"), lt.getDouble("y"), lt.getDouble("z")));
+            }
+        }
 
         CompoundTag wlTag = tag.getCompound("whitelist");
         int wlSize = wlTag.getInt("size");

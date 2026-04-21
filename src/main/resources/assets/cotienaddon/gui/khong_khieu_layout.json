@@ -53,9 +53,17 @@
       "stripe": true
     },
     {
-      "id": "warning",
+      "id": "condition",
       "x_offset_from_center": 0,
       "y_offset_from_top": 144,
+      "color": "0xFFFFFF",
+      "centered": true,
+      "stripe": true
+    },
+    {
+      "id": "warning",
+      "x_offset_from_center": 0,
+      "y_offset_from_top": 162,
       "color": "0xFF5555",
       "centered": true,
       "stripe": true

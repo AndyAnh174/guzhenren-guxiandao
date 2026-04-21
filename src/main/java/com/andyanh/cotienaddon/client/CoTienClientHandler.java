@@ -1,6 +1,7 @@
 package com.andyanh.cotienaddon.client;
 
 import com.andyanh.cotienaddon.CoTienAddon;
+import com.andyanh.cotienaddon.data.CoTienData;
 import com.andyanh.cotienaddon.network.OpenKhongKhieuPacket;
 import com.andyanh.cotienaddon.network.OpenPhucDiaPacket;
 import com.andyanh.cotienaddon.network.SyncCoTienPacket;
@@ -57,6 +58,9 @@ public class CoTienClientHandler {
     // Convention: nếu screen hiện tại là null → mở KhongKhieuScreen
     // Nếu đang mở PhucDiaScreen (do nhấn P) thì refresh với data mới
     private static boolean openingPhucDia = false;
+    private static CoTienData cachedData = null;
+
+    public static CoTienData getCachedData() { return cachedData; }
 
     public static void openPhucDia() {
         openingPhucDia = true;
@@ -66,11 +70,15 @@ public class CoTienClientHandler {
     public static void handleSyncPacket(SyncCoTienPacket pkt, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             Minecraft mc = Minecraft.getInstance();
+            cachedData = pkt.toData();
             if (openingPhucDia) {
                 openingPhucDia = false;
-                mc.setScreen(new PhucDiaScreen(pkt.toData()));
+                mc.setScreen(new PhucDiaScreen(cachedData));
+            } else if (mc.screen instanceof DinhTienDuScreen dts) {
+                // Refresh saved locations list when server syncs back after save/delete
+                dts.refreshData(cachedData);
             } else {
-                mc.setScreen(new KhongKhieuScreen(pkt.toData()));
+                mc.setScreen(new KhongKhieuScreen(cachedData));
             }
         });
     }

@@ -2,6 +2,7 @@ package com.andyanh.cotienaddon.client;
 
 import com.andyanh.cotienaddon.CoTienAddon;
 import com.andyanh.cotienaddon.data.CoTienData;
+import com.andyanh.cotienaddon.network.DebugActionPacket;
 import com.andyanh.cotienaddon.network.ThangTienRequestPacket;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -87,6 +88,21 @@ public class KhongKhieuScreen extends Screen {
                     left + W / 2 - 60, top + H - 40, 120, 20,
                     b -> { PacketDistributor.sendToServer(new ThangTienRequestPacket()); onClose(); }));
         }
+
+        // Debug buttons — chỉ hiện trong creative/gamemode 1
+        if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.isCreative()) {
+            int dbx = left + W / 2;
+            int dby = top + H - 16;
+            addRenderableWidget(Button.builder(Component.literal("§7[▶]"),
+                    b -> PacketDistributor.sendToServer(new DebugActionPacket(DebugActionPacket.ASCEND)))
+                    .bounds(dbx - 54, dby, 34, 12).build());
+            addRenderableWidget(Button.builder(Component.literal("§7[✓]"),
+                    b -> { PacketDistributor.sendToServer(new DebugActionPacket(DebugActionPacket.COMPLETE)); onClose(); })
+                    .bounds(dbx - 17, dby, 34, 12).build());
+            addRenderableWidget(Button.builder(Component.literal("§7[↺]"),
+                    b -> PacketDistributor.sendToServer(new DebugActionPacket(DebugActionPacket.RESET)))
+                    .bounds(dbx + 20, dby, 34, 12).build());
+        }
     }
 
     @Override
@@ -138,6 +154,10 @@ public class KhongKhieuScreen extends Screen {
                             data.guUsed_tier1, data.guUsed_tier2, data.guUsed_tier3,
                             data.guUsed_tier4, data.guUsed_tier5));
             case "phase" -> Component.translatable("gui.cotienaddon.phase." + data.thangTienPhase);
+            case "condition" -> data.thangTienPhase == 0
+                    ? Component.literal(data.canStartAscension()
+                        ? "§a✔ Đủ điều kiện Thăng Tiên"
+                        : "§c✘ Chưa đủ điều kiện") : null;
             case "warning" -> data.thangTienPhase == 0
                     ? Component.translatable("gui.cotienaddon.warning_irreversible") : null;
             default -> null;
