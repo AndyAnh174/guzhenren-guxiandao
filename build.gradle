@@ -48,21 +48,28 @@ neoForge {
     }
 
     // This line is optional. Access Transformers are automatically detected
-    // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
         client {
             client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
 
-            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+        client2 {
+            client()
+            programArgument '--username'
+            programArgument 'Player2'
+            gameDirectory = project.file('run/client2')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
+            gameDirectory = project.file('run/server')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 

@@ -89,6 +89,18 @@ public class KhongKhieuScreen extends Screen {
                     b -> { PacketDistributor.sendToServer(new ThangTienRequestPacket()); onClose(); }));
         }
 
+        // === Button mở Tiên Tôn panel (chỉ khi đủ điều kiện: Bát Chuyển Đỉnh Phong hoặc Cửu Chuyển) ===
+        var gv = Minecraft.getInstance().player.getData(net.guzhenren.network.GuzhenrenModVariables.PLAYER_VARIABLES);
+        boolean eligible = (gv.zhuanshu >= 9) || (gv.zhuanshu >= 8 && gv.jieduan >= 4);
+        if (eligible) {
+            double daode = data.daode;
+            String btnLabel = daode >= 0 ? "§b☯ Tiên Tôn" : "§c☠ Ma Tôn";
+            addRenderableWidget(makeTexturedButton(
+                    Component.literal(btnLabel),
+                    left + W / 2 - 40, top + H - 62, 80, 18,
+                    b -> Minecraft.getInstance().setScreen(new TienTonScreen(data))));
+        }
+
         // Debug buttons — chỉ hiện trong creative/gamemode 1
         if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.isCreative()) {
             int dbx = left + W / 2;

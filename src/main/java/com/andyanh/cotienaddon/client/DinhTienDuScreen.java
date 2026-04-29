@@ -89,10 +89,12 @@ public class DinhTienDuScreen extends Screen {
             final CoTienData.SavedLocation l = loc;
             int y = top + i * 22;
 
-            // Location name button (click → fill coords)
+            // Dimension short label
+            String dimShort = dimShortName(loc.dimensionId);
+            // Location name button (click → teleport trực tiếp)
             addRenderableWidget(Button.builder(
-                    Component.literal("§f" + loc.name + " §7(" + (int)loc.x + "," + (int)loc.y + "," + (int)loc.z + ")"),
-                    btn -> fillCoords(l))
+                    Component.literal("§f" + loc.name + " §8[" + dimShort + "] §7(" + (int)loc.x + "," + (int)loc.y + "," + (int)loc.z + ")"),
+                    btn -> teleportToSaved(l))
                     .bounds(rx, y, 100, 16).build());
 
             // Delete button
@@ -109,12 +111,23 @@ public class DinhTienDuScreen extends Screen {
         zField.setValue(String.valueOf((int) loc.z));
     }
 
+    private void teleportToSaved(CoTienData.SavedLocation loc) {
+        String dim = loc.dimensionId != null ? loc.dimensionId : "minecraft:overworld";
+        PacketDistributor.sendToServer(new TeleportDinhTienDuPacket(loc.x, loc.y, loc.z, dim));
+        onClose();
+    }
+
     private void confirmTeleport() {
         try {
             double x = Double.parseDouble(xField.getValue());
             double y = Double.parseDouble(yField.getValue());
             double z = Double.parseDouble(zField.getValue());
-            PacketDistributor.sendToServer(new TeleportDinhTienDuPacket(x, y, z));
+            // Teleport về dimension hiện tại của player
+            String dim = net.minecraft.client.Minecraft.getInstance().player != null
+                    ? net.minecraft.client.Minecraft.getInstance().player.level()
+                            .dimension().location().toString()
+                    : "minecraft:overworld";
+            PacketDistributor.sendToServer(new TeleportDinhTienDuPacket(x, y, z, dim));
             onClose();
         } catch (NumberFormatException e) {
             xField.setTextColor(0xFF5555);
@@ -134,21 +147,30 @@ public class DinhTienDuScreen extends Screen {
             int currentSize = clientData != null ? clientData.savedLocations.size() : 0;
             if (currentSize >= CoTienData.MAX_SAVED_LOCATIONS) return;
 
+            // Gửi "" → server dùng dimension hiện tại
             PacketDistributor.sendToServer(new SaveLocationPacket(
-                    SaveLocationPacket.ACTION_SAVE, name, x, y, z, -1));
+                    SaveLocationPacket.ACTION_SAVE, name, x, y, z, -1, ""));
             nameField.setValue("");
-            // Server will sync back updated data
         } catch (NumberFormatException ignored) {}
     }
 
     private void deleteLocation(int idx) {
         PacketDistributor.sendToServer(new SaveLocationPacket(
-                SaveLocationPacket.ACTION_DELETE, "", 0, 0, 0, idx));
-        // Server syncs back → onClose then reopen is not ideal, just remove locally for now
+                SaveLocationPacket.ACTION_DELETE, "", 0, 0, 0, idx, ""));
         if (clientData != null && idx < clientData.savedLocations.size()) {
             clientData.savedLocations.remove(idx);
         }
         rebuildScreen();
+    }
+
+    private static String dimShortName(String dimId) {
+        if (dimId == null) return "OW";
+        return switch (dimId) {
+            case "minecraft:overworld"   -> "OW";
+            case "minecraft:the_nether"  -> "NT";
+            case "minecraft:the_end"     -> "END";
+            default -> dimId.contains(":") ? dimId.substring(dimId.indexOf(':') + 1, Math.min(dimId.length(), dimId.indexOf(':') + 4)).toUpperCase() : dimId.substring(0, Math.min(3, dimId.length())).toUpperCase();
+        };
     }
 
     private void rebuildScreen() {

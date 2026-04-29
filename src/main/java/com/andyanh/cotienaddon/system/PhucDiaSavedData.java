@@ -46,6 +46,14 @@ public class PhucDiaSavedData extends SavedData {
         return ownerToSlot.getOrDefault(owner, -1);
     }
 
+    // Re-register slot khi đổi world/LAN (CoTienData là nguồn gốc tin cậy)
+    public void forceRegister(UUID owner, int slot) {
+        ownerToSlot.put(owner, slot);
+        slotToOwner.put(slot, owner);
+        if (slot >= nextSlot) nextSlot = slot + 1;
+        setDirty();
+    }
+
     public UUID getOwner(int slot) {
         return slotToOwner.get(slot);
     }

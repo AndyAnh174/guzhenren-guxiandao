@@ -2,7 +2,9 @@ package com.andyanh.cotienaddon.system;
 
 import com.andyanh.cotienaddon.CoTienAddon;
 import com.andyanh.cotienaddon.data.CoTienData;
+import com.andyanh.cotienaddon.entity.DiaSinhEntity;
 import com.andyanh.cotienaddon.init.CoTienAttachments;
+import com.andyanh.cotienaddon.init.CoTienEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -32,16 +34,34 @@ import java.util.UUID;
  */
 public class PhucDiaManager {
 
-    public static final ResourceKey<Level> PHUC_DIA_KEY = ResourceKey.create(
-            Registries.DIMENSION,
-            ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "phuc_dia"));
+    // Dimension theo grade (1-4), grade 0 fallback về grade 1
+    public static final ResourceKey<Level> PHUC_DIA_KEY = phucDiaKey(1); // default key cho check
+
+    public static ResourceKey<Level> phucDiaKey(int grade) {
+        int g = Math.max(1, Math.min(4, grade));
+        return ResourceKey.create(Registries.DIMENSION,
+                ResourceLocation.fromNamespaceAndPath(CoTienAddon.MODID, "phuc_dia_" + g));
+    }
+
+    public static boolean isPhucDiaDimension(ResourceKey<Level> dim) {
+        String path = dim.location().getPath();
+        return dim.location().getNamespace().equals(CoTienAddon.MODID)
+                && path.startsWith("phuc_dia");
+    }
 
     private static final int SLOT_SIZE = 8192; // block per slot, đủ rộng cho mọi grade
 
     // --- Helpers ---
 
+    // Surface của flat terrain: bedrock(1) + stone(50) + dirt(3) + grass(1) = y=55, spawn tại 56
+    private static final int SURFACE_Y = 56;
+
     public static BlockPos getSlotCenter(int slot) {
-        return new BlockPos(slot * SLOT_SIZE + SLOT_SIZE / 2, 5, SLOT_SIZE / 2);
+        return new BlockPos(slot * SLOT_SIZE + SLOT_SIZE / 2, SURFACE_Y, SLOT_SIZE / 2);
+    }
+
+    public static BlockPos getSurfacePos(ServerLevel level, int x, int z) {
+        return new BlockPos(x, SURFACE_Y, z);
     }
 
     public static int getBorderRadius(int grade) {
@@ -74,12 +94,14 @@ public class PhucDiaManager {
 
     // --- Tiên Nguyên production rate (per second) ---
 
-    public static double getTienNguyenRate(int grade) {
+    // Tiên Nguyên là tài nguyên cực hiếm — rate tính per-second, rất chậm
+    // Có thể nâng cấp qua Địa Linh Thạch (nhân với productionMultiplier)
+    public static double getTienNguyenBaseRate(int grade) {
         return switch (grade) {
-            case 1 -> 0.1;
-            case 2 -> 0.5;
-            case 3 -> 2.0;
-            case 4 -> 10.0;
+            case 1 -> 0.01;   // Hạ đẳng: 1 Tiên Nguyên / 100 giây
+            case 2 -> 0.02;   // Trung đẳng: 1 / 50 giây
+            case 3 -> 0.035;  // Thượng đẳng: 1 / ~28 giây
+            case 4 -> 0.05;   // Siêu đẳng: 1 / 20 giây
             default -> 0;
         };
     }
@@ -108,18 +130,69 @@ public class PhucDiaManager {
             return;
         }
 
-        ServerLevel phucDia = sp.server.getLevel(PHUC_DIA_KEY);
+        // Re-sync slot vào SavedData (phòng trường hợp đổi world/LAN mới)
+        if (data.phucDiaSlot >= 0) {
+            PhucDiaSavedData savedData = PhucDiaSavedData.get(sp.server);
+            if (savedData.getOwner(data.phucDiaSlot) == null) {
+                savedData.forceRegister(sp.getUUID(), data.phucDiaSlot);
+            }
+        }
+
+        ResourceKey<Level> dimKey = phucDiaKey(data.phucDiaGrade);
+        ServerLevel phucDia = sp.server.getLevel(dimKey);
         if (phucDia == null) {
-            CoTienAddon.LOGGER.error("[CoTienAddon] Phuc Dia dimension not found!");
+            CoTienAddon.LOGGER.error("[CoTienAddon] Phuc Dia dimension {} not found!", dimKey.location());
             return;
         }
 
-        BlockPos center = getSlotCenter(data.phucDiaSlot);
+        BlockPos rawCenter = getSlotCenter(data.phucDiaSlot);
+        BlockPos center = getSurfacePos(phucDia, rawCenter.getX(), rawCenter.getZ());
         sp.teleportTo(phucDia,
-                center.getX() + 0.5, center.getY(), center.getZ() + 0.5,
+                center.getX() + 0.5, center.getY() + 0.5, center.getZ() + 0.5,
                 0f, 0f);
+
+        // Lần đầu vào → spawn Địa Linh (dùng NBT flag, không dùng entity scan vì chunk có thể unloaded)
+        if (!data.hasDialinh) {
+            spawnDialinh(phucDia, center, sp);
+            data.hasDialinh = true;
+            sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), data);
+        }
+
+        // Cập nhật randomTickSpeed theo level
+        updateTimeDialation(phucDia, data.phucDiaLevel);
+
         sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                 "gui.cotienaddon.phuc_dia.enter"));
+    }
+
+    // --- Teleport guest vào Phúc Địa của owner ---
+    public static boolean teleportToOwnerPhucDia(ServerPlayer guest, ServerPlayer owner) {
+        CoTienData ownerData = owner.getData(CoTienAttachments.CO_TIEN_DATA.get());
+        if (ownerData.thangTienPhase < 4) return false;
+
+        // Kiểm tra guest có trong whitelist không
+        String guestUUID = guest.getUUID().toString();
+        if (!ownerData.whitelist.contains(guestUUID)) {
+            guest.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "§c✦ Bạn chưa được mời vào Phúc Địa của " + owner.getName().getString() + "!"));
+            return false;
+        }
+
+        ResourceKey<Level> dimKey = phucDiaKey(ownerData.phucDiaGrade);
+        ServerLevel phucDia = guest.server.getLevel(dimKey);
+        if (phucDia == null) return false;
+
+        BlockPos rawCenter = getSlotCenter(ownerData.phucDiaSlot);
+        BlockPos center = getSurfacePos(phucDia, rawCenter.getX(), rawCenter.getZ());
+        // Offset nhỏ để không đứng chồng lên chủ
+        guest.teleportTo(phucDia,
+                center.getX() + 2.5, center.getY() + 0.5, center.getZ() + 0.5,
+                0f, 0f);
+        guest.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "§a✦ Đã vào Phúc Địa của §f" + owner.getName().getString() + "§a!"));
+        owner.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "§a✦ §f" + guest.getName().getString() + " §ađã bước vào Phúc Địa của bạn."));
+        return true;
     }
 
     // --- Teleport ra Overworld ---
@@ -141,10 +214,7 @@ public class PhucDiaManager {
         int slot = savedData.getSlot(ownerUUID);
         if (slot < 0) return;
 
-        ServerLevel phucDia = server.getLevel(PHUC_DIA_KEY);
-        if (phucDia == null) return;
-
-        // Lấy grade của owner từ CoTienData
+        // Lấy grade của owner để chọn đúng dimension
         int ownerGrade = 1;
         for (ServerPlayer sp : server.getPlayerList().getPlayers()) {
             if (sp.getUUID().equals(ownerUUID)) {
@@ -152,6 +222,8 @@ public class PhucDiaManager {
                 break;
             }
         }
+        ServerLevel phucDia = server.getLevel(phucDiaKey(ownerGrade));
+        if (phucDia == null) return;
 
         BlockPos center = getSlotCenter(slot);
         guest.teleportTo(phucDia, center.getX() + 0.5, center.getY(), center.getZ() + 0.5, 0f, 0f);
@@ -164,7 +236,7 @@ public class PhucDiaManager {
     // --- Check nếu player đang đứng ngoài zone của mình → push về ---
 
     public static void enforceZoneBoundary(ServerPlayer sp) {
-        if (!sp.level().dimension().equals(PHUC_DIA_KEY)) return;
+        if (!isPhucDiaDimension(sp.level().dimension())) return;
 
         UUID ownerUUID = findZoneOwner(sp.server, sp.getX(), sp.getZ());
 
@@ -177,8 +249,19 @@ public class PhucDiaManager {
             // Chủ nhân → kiểm tra zone boundary
             CoTienData data = sp.getData(CoTienAttachments.CO_TIEN_DATA.get());
             if (!isInZone(data.phucDiaSlot, data.phucDiaGrade, sp.getX(), sp.getZ())) {
-                BlockPos center = getSlotCenter(data.phucDiaSlot);
-                sp.teleportTo(center.getX() + 0.5, center.getY(), center.getZ() + 0.5);
+                double cx = data.phucDiaSlot * SLOT_SIZE + SLOT_SIZE / 2.0;
+                double cz = SLOT_SIZE / 2.0;
+                int radius = getBorderRadius(data.phucDiaGrade);
+                double nx = sp.getX();
+                double nz = sp.getZ();
+                if (nx > cx + radius) nx = cx + radius - 1.5;
+                if (nx < cx - radius) nx = cx - radius + 1.5;
+                if (nz > cz + radius) nz = cz + radius - 1.5;
+                if (nz < cz - radius) nz = cz - radius + 1.5;
+                sp.teleportTo(nx, sp.getY(), nz);
+                sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c§l⚠ Ranh giới Phúc Địa! §7Không gian hiện tại đã đạt cực hạn. Hãy nâng cấp Phúc Địa để mở rộng thêm."));
+                // Play sound
+                sp.playNotifySound(net.minecraft.sounds.SoundEvents.BEACON_DEACTIVATE, net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.5f);
             }
             return;
         }
@@ -187,7 +270,54 @@ public class PhucDiaManager {
         CoTienData ownerData = getOwnerData(sp.server, ownerUUID);
         if (ownerData == null || !ownerData.whitelist.contains(sp.getUUID().toString())) {
             teleportOutOfPhucDia(sp);
+            return;
         }
+
+        // Khách đã trong whitelist → vẫn enforce zone boundary của chủ
+        if (!isInZone(ownerData.phucDiaSlot, ownerData.phucDiaGrade, sp.getX(), sp.getZ())) {
+            double cx = ownerData.phucDiaSlot * SLOT_SIZE + SLOT_SIZE / 2.0;
+            double cz = SLOT_SIZE / 2.0;
+            int radius = getBorderRadius(ownerData.phucDiaGrade);
+            double nx = sp.getX(), nz = sp.getZ();
+            if (nx > cx + radius) nx = cx + radius - 1.5;
+            if (nx < cx - radius) nx = cx - radius + 1.5;
+            if (nz > cz + radius) nz = cz + radius - 1.5;
+            if (nz < cz - radius) nz = cz - radius + 1.5;
+            sp.teleportTo(nx, sp.getY(), nz);
+            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "§c§l⚠ Ranh giới Phúc Địa của chủ nhân!"));
+        }
+    }
+
+    private static boolean isDialinhPresent(ServerLevel level, BlockPos center) {
+        // Check toàn bộ slot (SLOT_SIZE/2 = 4096 block) vì DiaSinh có AI và có thể đi xa
+        return !level.getEntitiesOfClass(DiaSinhEntity.class,
+                new net.minecraft.world.phys.AABB(center).inflate(SLOT_SIZE / 2.0)).isEmpty();
+    }
+
+    public static void spawnDialinh(ServerLevel level, BlockPos center, ServerPlayer owner) {
+        DiaSinhEntity entity = CoTienEntities.DIA_LINH.get().create(level);
+        if (entity == null) return;
+        // Random skin từ 14 skin có sẵn
+        int skinIdx = level.random.nextInt(DiaSinhEntity.SKIN_COUNT);
+        entity.setSkinIndex(skinIdx);
+        entity.setOwnerUUID(owner.getUUID().toString());
+        // Đứng cách center 3 block về phía nam
+        BlockPos spawnPos = getSurfacePos(level, center.getX(), center.getZ() + 3);
+        entity.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+        entity.setYRot(180f);
+        CoTienData ownerData = owner.getData(CoTienAttachments.CO_TIEN_DATA.get());
+        entity.updateStatsFromOwner(ownerData);
+        level.addFreshEntity(entity);
+        CoTienAddon.LOGGER.info("[DiaSinh] Spawned Dia Linh (skin={}) for {} at {}",
+                skinIdx, owner.getName().getString(), center);
+    }
+
+    public static void updateTimeDialation(ServerLevel level, int phucDiaLevel) {
+        // randomTickSpeed: level 0=15, level 5=30, level 10=60
+        int tickSpeed = 15 + phucDiaLevel * 5;
+        level.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_RANDOMTICKING)
+                .set(tickSpeed, level.getServer());
     }
 
     private static CoTienData getOwnerData(MinecraftServer server, UUID ownerUUID) {

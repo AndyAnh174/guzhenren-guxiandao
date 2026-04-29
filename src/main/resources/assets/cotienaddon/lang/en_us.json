@@ -49,5 +49,13 @@
   "gui.cotienaddon.phuc_dia.ecosystem.coming_soon": "(Hệ sinh thái — Phase 5)",
 
   "item.cotienaddon.dinh_tien_du": "Định Tiên Du Cổ",
-  "item.cotienaddon.tien_nguyen": "Tiên Nguyên"
+  "item.cotienaddon.tien_nguyen": "Tiên Nguyên",
+  "item.cotienaddon.tran_vu": "Trấn Vũ Tiên Cổ",
+  "item.cotienaddon.dao_ngan": "Đạo Ngân",
+  "item.cotienaddon.tien_co": "Tiên Cổ",
+  "item.cotienaddon.orphaned_node": "Cô Hồn Tiên Địa Khế",
+  "block.cotienaddon.khoi_tien_nguyen": "Khối Tiên Nguyên",
+  "block.cotienaddon.tien_dai": "Tiên Đài",
+  "entity.cotienaddon.thach_nhan": "Thạch Nhân",
+  "item.cotienaddon.thang_thanh_van": "Thăng Thanh Vân Tiên Cổ"
 }

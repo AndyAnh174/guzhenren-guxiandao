@@ -1,0 +1,74 @@
+{
+  "credit": "CoTien Addon - Quan Tai Bang (Ice Coffin) skill effect model",
+  "textures": {
+    "ice":  "cotienaddon:block/quan_tai_bang_ice",
+    "rune": "cotienaddon:block/quan_tai_bang_rune",
+    "particle": "cotienaddon:block/quan_tai_bang_ice"
+  },
+  "elements": [
+    {
+      "__comment": "Than quan tai (main coffin body)",
+      "from": [2, 0, 1],
+      "to":   [14, 10, 15],
+      "faces": {
+        "north": {"uv": [0, 0, 12, 10], "texture": "#ice"},
+        "south": {"uv": [0, 0, 12, 10], "texture": "#ice"},
+        "east":  {"uv": [0, 0, 14, 10], "texture": "#ice"},
+        "west":  {"uv": [0, 0, 14, 10], "texture": "#ice"},
+        "up":    {"uv": [0, 0, 12, 14], "texture": "#rune"},
+        "down":  {"uv": [0, 0, 12, 14], "texture": "#ice"}
+      }
+    },
+    {
+      "__comment": "Nap quan tai (lid) - rong hon than mot chut",
+      "from": [1, 10, 0],
+      "to":   [15, 12, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 14, 2],  "texture": "#ice"},
+        "south": {"uv": [0, 0, 14, 2],  "texture": "#ice"},
+        "east":  {"uv": [0, 0, 16, 2],  "texture": "#ice"},
+        "west":  {"uv": [0, 0, 16, 2],  "texture": "#ice"},
+        "up":    {"uv": [0, 0, 14, 16], "texture": "#rune"},
+        "down":  {"uv": [0, 0, 14, 16], "texture": "#ice"}
+      }
+    },
+    {
+      "__comment": "Phan dau quan tai (top shoulder - wider)",
+      "from": [1, 0, 0],
+      "to":   [15, 10, 4],
+      "faces": {
+        "north": {"uv": [0, 0, 14, 10], "texture": "#ice"},
+        "south": {"uv": [0, 0, 14, 10], "texture": "#ice"},
+        "east":  {"uv": [0, 0, 4, 10],  "texture": "#ice"},
+        "west":  {"uv": [0, 0, 4, 10],  "texture": "#ice"},
+        "up":    {"uv": [0, 0, 14, 4],  "texture": "#rune"},
+        "down":  {"uv": [0, 0, 14, 4],  "texture": "#ice"}
+      }
+    },
+    {
+      "__comment": "Phan chan quan tai (foot - narrower)",
+      "from": [3, 0, 12],
+      "to":   [13, 10, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 10, 10], "texture": "#ice"},
+        "south": {"uv": [0, 0, 10, 10], "texture": "#ice"},
+        "east":  {"uv": [0, 0, 4, 10],  "texture": "#ice"},
+        "west":  {"uv": [0, 0, 4, 10],  "texture": "#ice"},
+        "up":    {"uv": [0, 0, 10, 4],  "texture": "#rune"},
+        "down":  {"uv": [0, 0, 10, 4],  "texture": "#ice"}
+      }
+    }
+  ],
+  "display": {
+    "ground": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [1, 1, 1]
+    },
+    "fixed": {
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [1, 1, 1]
+    }
+  }
+}

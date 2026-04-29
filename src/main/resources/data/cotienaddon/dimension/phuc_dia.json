@@ -3,23 +3,15 @@
   "generator": {
     "type": "minecraft:flat",
     "settings": {
-      "biome": "minecraft:plains",
+      "biome": "minecraft:cherry_grove",
       "layers": [
-        {
-          "block": "minecraft:bedrock",
-          "height": 1
-        },
-        {
-          "block": "minecraft:stone",
-          "height": 3
-        },
-        {
-          "block": "minecraft:grass_block",
-          "height": 1
-        }
+        {"block": "minecraft:bedrock",    "height": 1},
+        {"block": "minecraft:stone",      "height": 50},
+        {"block": "minecraft:dirt",       "height": 3},
+        {"block": "minecraft:grass_block","height": 1}
       ],
       "lakes": false,
-      "features": false,
+      "features": true,
       "structure_overrides": []
     }
   }

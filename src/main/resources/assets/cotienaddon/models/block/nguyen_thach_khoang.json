@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "cotienaddon:block/nguyen_thach_khoang"
+  }
+}

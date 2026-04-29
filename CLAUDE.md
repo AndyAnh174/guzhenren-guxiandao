@@ -6,7 +6,7 @@
 - Decompiled mod source at: `C:\moddev\guxiandao\decompiled_src` (13,534 files, indexed in Qdrant)
 - Use **vibe-hnindex MCP** (`mcp_ck_CoTrung` collection) to search mod internals — query it before guessing class/method names
 - Qdrant: `http://localhost:6333`, Ollama: `http://222.253.80.30:11434` (bge-m3:567m)
-- Addon source code: `src/main/java/` (currently examplemod template, chưa migrate)
+- Addon source code: `src/main/java/com/andyanh/cotienaddon/`
 
 ## Feature đang build: Hệ thống Cổ Tiên (Gu Immortal)
 Mod gốc max ở Ngũ Chuyển (zhuanshu=5.0). Addon này thêm path Cổ Tiên (thăng tiên từ ngũ chuyển đỉnh phong).
@@ -22,28 +22,55 @@ Mod gốc max ở Ngũ Chuyển (zhuanshu=5.0). Addon này thêm path Cổ Tiên
 - [x] GUI KhongKhieuScreen (keybind K) + nút Đột Phá + phase display
 - [x] 3 bước: Phá Khiếu (phase1) → Nạp Khí (phase2, tick) → Ngưng Khiếu (phase3) → hoàn thành (phase4, zhuanshu=6.0)
 - [x] Network: OpenKhongKhieuPacket, SyncCoTienPacket, ThangTienRequestPacket
+- [x] Thăng Tiên điều kiện: ≥2 liupai_*dao > 100,000 (Chuẩn Vô thượng Đại Tông Sư)
+- [x] Thăng tiên boost: ×2 HP max, ×2 gongjili, ×2 zuida_hunpo
 
-### Phase 3 — Phúc Địa (Tiên Khiếu)
-- [ ] 4 grade dimension dựa vào Nhân Khí:
-  - Hạ đẳng: 8x8 chunk, 1 biome, sản xuất chậm
-  - Trung đẳng: 32x32 chunk, 2-3 biome, sản xuất vừa
-  - Thượng đẳng: 128x128+ chunk, quặng hiếm auto-spawn, sản xuất nhanh
-  - Siêu đẳng: dimension vô tận, max buff, Thiên Kiếp rất ngắn + hardcore
-- [ ] GUI Phúc Địa 3 tab: Tổng quan | Quản lý Khách | Cài đặt Hệ sinh thái
-- [ ] Permission matrix 5 quyền: Xây/Phá | Vật chứa | Sát thương | Cốt lõi | Quản lý cấp cao
-- [ ] CoTienData NBT: lazy-load dimension, virtual inventory sync
+### Phase 3 — Phúc Địa (Tiên Khiếu) ✅
+- [x] 4 grade dimension dựa vào Nhân Khí (phuc_dia_1..4)
+- [x] Thượng đẳng: quặng Nguyên Thạch + Khối Tiên Nguyên auto-spawn mỗi 10 phút
+- [x] Siêu đẳng: Thiên Kiếp ngưỡng 200 wave định kỳ
+- [x] GUI Phúc Địa 3 tab: Tổng quan | Quản lý Khách | Hệ sinh thái
+- [x] Tab Hệ sinh thái: toggle Cố định Ngày, Cho phép Mưa, Sinh vật Hòa Bình, Guzhenren Mobs
+- [x] Permission matrix 5 quyền: BUILD | CONTAINERS | COMBAT | CORE | MANAGE
+- [x] Địa Linh NPC (DiaSinhEntity): kho đồ 4 cấp (27/36/45/54 slots), bond quest, orphan state
+- [x] Thạch Nhân (ThachNhanEntity): đào quặng Nguyên Thạch 3-state AI, surface-only mine
+- [x] Ngày/đêm hoạt động (đã xóa fixed_time khỏi dimension JSON)
 
-### Phase 4 — Thiên Kiếp Địa Tai
-- [ ] Trigger: lúc thăng tiên + định kỳ (100 ngày game)
-- [ ] Boss Bar cảnh báo
-- [ ] Thiên Kiếp: sét spam, fireball rain, flying mobs (Phantom-buff)
-- [ ] Địa Tai: magma under feet, underground mobs trồi lên (Warden, Silverfish)
-- [ ] Win: drop Đạo Ngân / Tiên Cổ | Fail: Phúc Địa bị hại hoặc rớt cấp
+### Phase 4 — Thiên Kiếp Địa Tai ✅
+- [x] Trigger: khi thăng tiên phase 2 bắt đầu + định kỳ (Siêu đẳng)
+- [x] Boss Bar cảnh báo (BossEvent, màu RED/YELLOW)
+- [x] 6 loại Thiên Kiếp: HAO_DIAN_LANG+Phantom | LEI_DIAN_LANG+Blaze+fireball | Vex+DIAN_LANG+Wither Skeleton | Wither Skeleton+DIAN_XIONG+sét | XU_YING+mobs+Phantom | LONG_JUAN_FENG+massive lightning
+- [x] 6 loại Địa Tai: HONG_XIONG+XIONG+magma | DIAN_XIONG+HUI_XIONG+LEI_GUAN_TOU | JINRENWANGHU+XIAO | SHUI_LONG+magma+lightning | HUOYANXIONG+LIEYAN+LIAOYUAN | WU_ZU_NIAO+JU_CHI_JIN_WU
+- [x] Win: award liupai_tiandao hoặc liupai_tudao (đạo ngân path)
+- [x] Fail / chết trong Thăng Tiên: reset toàn bộ tu vi (zhuanshu, jieduan, kongqiao, zhenyuan về 0)
+- [x] PlayerEvent.Clone fix: boss bar và kiep_ticks không persist sau khi chết
 
-### Phase 5 — Multiplayer & Địa Linh
-- [ ] Annex/Nuốt Phúc Địa: drop Orphaned Blessed Land Node khi chủ chết
-- [ ] Địa Linh NPC: daemon tự động vận hành Phúc Địa vô chủ
-- [ ] Mini-quest "Điều kiện chấp niệm" để sang tên chủ mới
+### Phase 5 — Multiplayer & Địa Linh ✅
+- [x] Khi chủ Phúc Địa chết: drop OrphanedNodeItem chứa toàn bộ data
+- [x] AnnexPhucDiaPacket: ritual nuốt Phúc Địa, tốn liupai_tiandao (grade×500)
+- [x] Địa Linh cô hồn (orphaned): soul particles, "☠ Cô Hồn Địa Linh" name, invulnerable
+- [x] Chấp Niệm quest: 3 nhiệm vụ ngẫu nhiên (gather TN / mine Nguyên Thạch / claim orphan node) để sang tên chủ mới
+- [x] Địa Linh storage upgrade: 4 cấp, chi phí tăng lũy thừa (300 × 2^level TN)
+
+### Hệ thống Danh Hiệu Tôn ✅
+- Điều kiện: `thangTienPhase >= 4 && phucDiaLevel >= 8`
+- Loại tự động theo đạo đức: `daode >= 0` → "Tiên Tôn", `daode < 0` → "Ma Tôn"
+- Hiển thị: Scoreboard team prefix `cttm_<uuid4>` cho cả nameplate lẫn chat
+- Màu sắc tùy chỉnh (7 màu preset + hex #RRGGBB)
+- GUI trong KhongKhieuScreen (phím K), cuối màn hình
+- Commands: `/cotien tonhieu set <tên>` | `color <màu>` | `reset` | `info`
+
+### Hệ thống Trấn Vũ Cổ ✅
+- Radius: 50 block (tăng từ 16)
+- Quan tài hiển thị (display entity) di chuyển theo player mỗi tick
+- Chặn mọi teleport: EndermanTeleport, SpreadOut, Chorus, DinhTienDu, cả dimension change
+
+### Đạo Ngân (liupai_*dao) ✅
+- 44 biến `liupai_*dao` trong GuzhenrenModVariables = tiến độ các Đạo (thiên, địa, nhân, v.v.)
+- Ngưỡng Chuẩn Vô thượng Đại Tông Sư = 100,000
+- Thăng Tiên: cần ≥2 loại > 100,000
+- Win Kiếp/Tai: cộng điểm vào liupai_tiandao hoặc liupai_tudao
+- Annex: tốn liupai_tiandao (grade×500)
 
 ## Main Mod (Guzhenren)
 - **Guzhenren** (Cổ Chân Nhân / 大爱修仙模组本体11.10版本) — cultivation mod
@@ -61,17 +88,17 @@ Mod gốc max ở Ngũ Chuyển (zhuanshu=5.0). Addon này thêm path Cổ Tiên
   - `zhuanshu` — Chuyển số (cultivation level/tier), max 5.0 trong mod gốc
   - `jieduan` — Giai đoạn trong chuyển (stage within tier)
   - `kongqiao` — Khiếu đã mở (apertures opened)
-  - `zhenyuan` — Chân nguyên hiện tại (current true essence)
-  - `zuida_zhenyuan` — Chân nguyên tối đa (max true essence)
-  - `niantou` — Niệm đầu (thought power)
-  - `niantou_rongliang` — Niệm đầu dung lượng (thought capacity)
+  - `zhenyuan` / `zuida_zhenyuan` — Chân nguyên hiện tại / tối đa
+  - `niantou` / `niantou_rongliang` — Niệm đầu / dung lượng
   - `zuida_hunpo` — Hồn phách tối đa (max soul)
-  - `shouyuan_ke` / `shouyuan_miao` / `shouyuan_fen` — Thọ nguyên (lifespan)
+  - `shouyuan_ke/miao/fen` — Thọ nguyên (lifespan)
   - `gongjili` — Công kích lực (attack power)
   - `fangyuli` — Phòng ngự lực (defense power)
-  - `qiyun` — Khí vận (luck/fortune)
+  - `qiyun` / `qiyun_shangxian` — Khí vận / thượng hạn
   - `renqi` — Nhân khí reputation
+  - `daode` — Đạo đức (moral alignment, + = thiện, - = ác)
   - `benminggu` — Bản mệnh cổ (life gu bound)
+  - `liupai_*dao` — 44 biến tiến độ Đạo Ngân (thiendao, tudao, xingdao, v.v.)
 
 ## Build & Run Commands
 
@@ -94,7 +121,7 @@ JAVA_HOME="..." ./gradlew build
 
 > Log file: `run/logs/latest.log`
 
-## Debug Commands (in-game, cần op/creative)
+## Debug Commands (in-game, cần op — permission level 2)
 
 | Lệnh | Tác dụng |
 |------|----------|
@@ -102,7 +129,83 @@ JAVA_HOME="..." ./gradlew build
 | `/cotien debug complete` | Force hoàn thành (phase 3 → 4) |
 | `/cotien debug reset` | Reset phase về 0 |
 | `/cotien debug status` | In toàn bộ CoTienData |
-| `/cotien debug setnk <amount>` | Set Nhân Khí (ví dụ: setnk 1000 = Trung đẳng) |
+| `/cotien debug setnk <amount>` | Set Nhân Khí |
+| `/cotien debug settn <amount>` | Set Tiên Nguyên |
+| `/cotien debug setgrade <1-4>` | Set grade Phúc Địa |
+| `/cotien debug kiep` | Bắt đầu Thiên Kiếp ngay |
+| `/cotien debug ditai` | Bắt đầu Địa Tai ngay |
+| `/cotien debug questcomplete` | Hoàn thành quest Địa Linh ngay |
+| `/cotien debug questreset` | Reset toàn bộ quest Địa Linh |
+| `/cotien debug spawnores` | Spawn quặng Nguyên Thạch + Khối TN |
+| `/cotien debug buythachnhan` | Mua Thạch Nhân (bypass cost) |
+| `/cotien debug xray` | Hiển thị vị trí quặng bằng particle |
+| `/cotien debug seal` | Test phong ấn Trấn Vũ Cổ |
+| `/cotien debug unseal` | Tháo phong ấn |
+
+## Player Commands (mọi player — permission level 0)
+
+| Lệnh | Tác dụng |
+|------|----------|
+| `/cotien tizhi` | Liệt kê tất cả thể chất (0-15) |
+| `/cotien dialinhname <tên>` | Đặt tên Địa Linh (cần hoàn thành bond quest) |
+| `/cotien tonhieu set <tên>` | Đặt tên Danh Hiệu Tôn |
+| `/cotien tonhieu color <màu>` | Đổi màu danh hiệu |
+| `/cotien tonhieu reset` | Xóa danh hiệu |
+| `/cotien tonhieu info` | Xem info danh hiệu |
+| `/cotien acceptinvite <ownerName>` | Vào Phúc Địa của người khác |
+
+## Op-only Commands (permission level 2)
+
+| Lệnh | Tác dụng |
+|------|----------|
+| `/cotien setkongqiao <0-36>` | Set số Khiếu |
+| `/cotien setdaode <value>` | Set Đạo Đức |
+| `/cotien setqiyun <-200..200>` | Set Khí Vận |
+| `/cotien settizhi <0-15>` | Set Thể Chất |
+
+## Code Structure
+
+```
+src/main/java/com/andyanh/cotienaddon/
+├── CoTienAddon.java
+├── data/CoTienData.java                — player data, NBT serialize/deserialize
+├── init/
+│   ├── CoTienAttachments.java
+│   ├── CoTienItems.java               — DINH_TIEN_DU, TIEN_NGUYEN, ORPHANED_NODE, TRAN_VU
+│   ├── CoTienBlocks.java              — KHOI_TIEN_NGUYEN
+│   ├── CoTienEntities.java            — THACH_NHAN, DIA_SINH
+│   ├── CoTienCreativeTabs.java
+│   └── CoTienNetwork.java             — đăng ký + handle tất cả packets
+├── network/                           — *Packet.java records
+│   ├── TeleportDinhTienDuPacket.java
+│   ├── SaveLocationPacket.java
+│   ├── AnnexPhucDiaPacket.java        — nuốt Phúc Địa qua OrphanedNode
+│   └── SetTonHieuPacket.java          — set Danh Hiệu Tôn
+├── item/
+│   ├── DinhTienDuItem.java            — Định Tiên Du Cổ (teleport gu, bản mệnh cổ)
+│   ├── TienNguyenItem.java            — Tiên Nguyên (currency)
+│   ├── TranVuItem.java                — Trấn Vũ Cổ (coffin seal, radius 50)
+│   └── OrphanedNodeItem.java          — Orphaned Blessed Land Node (annex ritual)
+├── entity/
+│   ├── ThachNhanEntity.java           — Thạch Nhân (3-state mining AI)
+│   └── DiaSinhEntity.java             — Địa Linh (storage 4 levels, bond quest, orphan)
+├── system/
+│   ├── ThangTienManager.java          — ascension logic, Đạo Ngân check (liupai_*dao ≥2 >100k)
+│   ├── PhucDiaManager.java            — dimension management, teleport
+│   ├── PhucDiaSavedData.java          — per-dimension server saved data
+│   └── PhucDiaManager.java
+├── event/
+│   ├── CoTienEventHandler.java        — inventory scan, Trấn Vũ seal, Danh Hiệu restore
+│   └── PhucDiaEventHandler.java       — Thiên Kiếp/Địa Tai (6 loại mỗi), Danh Hiệu Tôn nameplate, clone/death
+├── command/CoTienCommand.java         — /cotien commands (phân quyền rõ ràng)
+└── client/
+    ├── KhongKhieuScreen.java          — GUI Tiên Khiếu (phím K) + Danh Hiệu Tôn section
+    ├── PhucDiaScreen.java             — GUI Phúc Địa (phím P), 3 tab
+    ├── PhucDiaUpgradeScreen.java      — GUI nâng cấp Phúc Địa
+    ├── DinhTienDuScreen.java          — GUI tọa độ dịch chuyển
+    ├── CoTienHudOverlay.java          — HUD overlay
+    └── CoTienClientHandler.java       — cache CoTienData, handle sync packets
+```
 
 ## Code Conventions
 
@@ -115,73 +218,16 @@ JAVA_HOME="..." ./gradlew build
 - Attribute IDs dùng format CŨ: `minecraft:generic.max_health` (không phải `minecraft:max_health`)
 - Mob entity types lấy từ `GuzhenrenModEntities.*` (DIAN_LANG, XIONG, etc.)
 - Animation: `PacketDistributor.sendToPlayer(sp, new SetupAnimationsProcedure.GuzhenrenModAnimationMessage(name, entityId, override))`
-
-## Texture Workflow (xóa phông + resize về 16×16)
-
-Script mẫu: `remove_bg.py` tại root project (đang dùng cho phuc_dia_bg.png).
-
-**Quy trình đúng** (tránh bị mờ hoặc viền trắng):
-
-```python
-from PIL import Image
-from collections import deque
-
-INPUT = "raw/item_name.png"   # ảnh gốc độ phân giải cao (512–2048px)
-OUTPUT = "src/main/resources/assets/cotienaddon/textures/item/item_name.png"
-TOLERANCE = 50  # tăng nếu bg không đồng đều
-
-def color_diff(c1, c2):
-    return max(abs(int(a) - int(b)) for a, b in zip(c1[:3], c2[:3]))
-
-img = Image.open(INPUT).convert("RGBA")
-pixels = img.load()
-w, h = img.size
-
-# 1. Sample bg từ điểm chắc chắn là nền (không lấy góc — hay bị sai)
-bg_color = pixels[10, h // 2][:3]
-
-# 2. Flood fill từ tất cả 4 cạnh
-visited = set()
-stack = [(x, y) for x in range(w) for y in [0, h-1]] + \
-        [(x, y) for y in range(h) for x in [0, w-1]]
-
-while stack:
-    x, y = stack.pop()
-    if (x, y) in visited or not (0 <= x < w and 0 <= y < h): continue
-    px = pixels[x, y]
-    visited.add((x, y))
-    if px[3] == 0 or color_diff(px, bg_color) <= TOLERANCE:
-        pixels[x, y] = (0, 0, 0, 0)
-        stack += [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
-
-# 3. Crop sát nội dung + padding vuông
-bbox = img.getbbox()
-cropped = img.crop(bbox)
-cw, ch = cropped.size
-side = max(cw, ch)
-padded = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-padded.paste(cropped, ((side-cw)//2, (side-ch)//2))
-
-# 4. Resize LANCZOS (chất lượng cao) → 16×16
-resized = padded.resize((16, 16), Image.LANCZOS)
-
-# 5. Hard threshold alpha — QUAN TRỌNG: tránh viền mờ do LANCZOS blend transparent
-data = resized.getdata()
-resized.putdata([(r, g, b, 0 if a < 100 else 255) for r, g, b, a in data])
-
-resized.save(OUTPUT)
-```
-
-**Những lỗi hay gặp:**
-- **Blurry 16×16**: dùng NEAREST resize từ ảnh lớn → chỉ lấy mỗi 128px thứ một. Fix: LANCZOS.
-- **Viền mờ sau LANCZOS**: alpha trung gian (1–99) do blend. Fix: hard threshold `a < 100 → 0`.
-- **Xóa nhầm màu của object**: tolerance quá cao hoặc sample sai điểm bg. Fix: giảm tolerance, chọn điểm sample chắc chắn là bg.
-- **Ảnh gốc nền xám không phải transparent**: viewer thấy checker ≠ ảnh đã có alpha. Luôn convert("RGBA") và kiểm tra alpha channel thực.
+- ChestMenu nhiều hàng: dùng constructor trực tiếp `new ChestMenu(MenuType.GENERIC_9x4, id, playerInv, container, rows)` — KHÔNG có `.fourRows()` hay `.fiveRows()` trong vanilla 1.21.1
+- Scoreboard team prefix: `PlayerTeam.setPlayerPrefix(Component)` — cách duy nhất đổi nameplate + chat trong multiplayer
+- Player joining dimension: dùng `EntityJoinLevelEvent` và check `entity instanceof ServerPlayer` — KHÔNG có `PlayerChangedDimensionEvent`
 
 ## Known Issues
 - Attribute IDs use OLD format: `minecraft:generic.max_health` (not `minecraft:max_health`)
 - GeckoLib "Unable to parse animation: death" errors = mod gốc, bình thường, bỏ qua
 - Nhân Khí tracking qua inventory snapshot — không hoạt động ở creative mode (items không bị consume)
+- Mob có type AMBIENT không attack player — phải dùng mob có type MONSTER (ví dụ: HUOYANXIONG thay cho HUOYOUGUSHITI)
+- Texture `orphaned_node` item chưa có file PNG (cần tạo)
 
 ## User Preferences
 - User speaks Vietnamese, uses informal tone ("tui", "nè", "ko dc")

@@ -3,10 +3,10 @@ package com.andyanh.cotienaddon.system;
 import com.andyanh.cotienaddon.CoTienAddon;
 import com.andyanh.cotienaddon.data.CoTienData;
 import com.andyanh.cotienaddon.init.CoTienAttachments;
-import net.guzhenren.init.GuzhenrenModEntities;
 import net.guzhenren.network.GuzhenrenModVariables;
 import net.guzhenren.procedures.SetupAnimationsProcedure;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -28,6 +28,49 @@ import java.util.UUID;
 public class ThangTienManager {
 
     private static final Set<UUID> ngungKhieuPending = new HashSet<>();
+
+    public static final double DAO_NGAN_DAI_TONG_SU = 100_000.0; // ngưỡng Chuẩn Vô thượng Đại Tông Sư
+
+    public record DaoCheckResult(int count, String topName, double topValue) {}
+
+    /** Kiểm tra bao nhiêu lưu phái đạo đạt Đại Tông Sư (>50,000) */
+    public static DaoCheckResult checkDaoNganCondition(net.guzhenren.network.GuzhenrenModVariables.PlayerVariables gv) {
+        // Tất cả liupai_*dao fields và tên hiển thị
+        double[] values = {
+            gv.liupai_xingdao,  gv.liupai_tiandao,  gv.liupai_fengdao,  gv.liupai_leidao,
+            gv.liupai_shuidao,  gv.liupai_yandao,    gv.liupai_mudao,    gv.liupai_tudao,
+            gv.liupai_guangdao, gv.liupai_andao,     gv.liupai_jiandao,  gv.liupai_liandao,
+            gv.liupai_hundao,   gv.liupai_yundao,    gv.liupai_yundao2,  gv.liupai_bingxuedao,
+            gv.liupai_jindao,   gv.liupai_rendao,    gv.liupai_zhidao,   gv.liupai_zhendao,
+            gv.liupai_qidao,    gv.liupai_nudao,     gv.liupai_lidao,    gv.liupai_yingdao,
+            gv.liupai_huadao,   gv.liupai_yuedao,    gv.liupai_xuedao,   gv.liupai_dandao,
+            gv.liupai_bingdao,  gv.liupai_huandao,   gv.liupai_dudao,    gv.liupai_mengdao,
+            gv.liupai_daodao,   gv.Liupai_gudao,     gv.liupai_xudao,    gv.liupai_feixingdao,
+            gv.liupai_bianhuadao, gv.liupai_toudao,  gv.liupai_shidao,   gv.liupai_xindao,
+            gv.liupai_lvdao,    gv.liupai_yindao,    gv.liupai_jindao2,  gv.liupai_zhoudao
+        };
+        String[] names = {
+            "Hành đạo","Thiên đạo","Phong đạo","Lôi đạo",
+            "Thủy đạo","Viêm đạo","Mộc đạo","Thổ đạo",
+            "Quang đạo","Ám đạo","Kiếm đạo","Luyện đạo",
+            "Hồn đạo","Vân đạo","Vân đạo 2","Băng tuyết đạo",
+            "Kim đạo","Nhân đạo","Trí đạo","Trấn đạo",
+            "Khí đạo","Nộ đạo","Lực đạo","Ảnh đạo",
+            "Hoa đạo","Nguyệt đạo","Huyết đạo","Đan đạo",
+            "Băng đạo","Hoán đạo","Độc đạo","Mộng đạo",
+            "Đạo đạo","Cốt đạo","Hư đạo","Phi hành đạo",
+            "Biến hóa đạo","Thấu đạo","Thực đạo","Tâm đạo",
+            "Lục đạo","Âm đạo","Kim đạo 2","Trụ đạo"
+        };
+        int count = 0;
+        String topName = "Không";
+        double topValue = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] > topValue) { topValue = values[i]; topName = names[i]; }
+            if (values[i] > DAO_NGAN_DAI_TONG_SU) count++;
+        }
+        return new DaoCheckResult(count, topName, topValue);
+    }
 
     // NAP_KHI_DURATION: 3 minutes = 3600 ticks
     private static final int NAP_KHI_DURATION = 3600;
@@ -60,10 +103,6 @@ public class ThangTienManager {
             }
             if (sp.tickCount % 5 == 0) {
                 spawnQiParticles(sp, data);
-            }
-            // Mob wave every 30 seconds
-            if (data.napKhiTick % MOB_WAVE_INTERVAL == 0) {
-                spawnKiepMobs(sp, data);
             }
         }
     }
@@ -112,64 +151,6 @@ public class ThangTienManager {
         }
     }
 
-    /**
-     * Spawn Thiên Kiếp / Địa Tai mobs near player based on accumulated Thiên/Địa Khí.
-     * Thiên Kiếp = lightning wolves (DIAN_LANG variants)
-     * Địa Tai = bears (XIONG variants) and earth wolves (TU_LANG, HUI_LANG)
-     */
-    private static void spawnKiepMobs(ServerPlayer sp, CoTienData data) {
-        if (!(sp.level() instanceof ServerLevel level)) return;
-        double thienKhi = data.thienKhi;
-        double diaKhi = data.diaKhi;
-
-        // Thiên Kiếp: spawn if thienKhi > 3
-        if (thienKhi > 3) {
-            EntityType<?> type;
-            if (thienKhi > 60) type = GuzhenrenModEntities.LEI_DIAN_LANG.get();
-            else if (thienKhi > 25) type = GuzhenrenModEntities.HAO_DIAN_LANG.get();
-            else type = GuzhenrenModEntities.DIAN_LANG.get();
-
-            int count = Math.min(1 + (int)(thienKhi / 40), 3);
-            spawnMobsNear(level, sp, type, count);
-            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                    "§e⚡ Thiên Kiếp giáng xuống! (" + count + " " + entityDisplayName(type) + ")"));
-        }
-
-        // Địa Tai: spawn if diaKhi > 3
-        if (diaKhi > 3) {
-            EntityType<?> type;
-            if (diaKhi > 60) type = GuzhenrenModEntities.DIAN_XIONG.get();
-            else if (diaKhi > 25) type = GuzhenrenModEntities.HONG_XIONG.get();
-            else type = GuzhenrenModEntities.XIONG.get();
-
-            int count = Math.min(1 + (int)(diaKhi / 40), 3);
-            spawnMobsNear(level, sp, type, count);
-            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                    "§6🌋 Địa Tai trồi lên! (" + count + " " + entityDisplayName(type) + ")"));
-        }
-    }
-
-    private static void spawnMobsNear(ServerLevel level, ServerPlayer sp, EntityType<?> type, int count) {
-        for (int i = 0; i < count; i++) {
-            var mob = type.create(level);
-            if (mob == null) continue;
-            double angle = Math.random() * Math.PI * 2;
-            double dist = 8 + Math.random() * 5;
-            mob.setPos(sp.getX() + Math.cos(angle) * dist, sp.getY(), sp.getZ() + Math.sin(angle) * dist);
-            level.addFreshEntity(mob);
-            if (mob instanceof Mob m) m.setTarget(sp);
-        }
-    }
-
-    private static String entityDisplayName(EntityType<?> type) {
-        if (type == GuzhenrenModEntities.LEI_DIAN_LANG.get()) return "Lôi Điện Lang";
-        if (type == GuzhenrenModEntities.HAO_DIAN_LANG.get()) return "Hào Điện Lang";
-        if (type == GuzhenrenModEntities.DIAN_LANG.get()) return "Điện Lang";
-        if (type == GuzhenrenModEntities.DIAN_XIONG.get()) return "Điện Hùng";
-        if (type == GuzhenrenModEntities.HONG_XIONG.get()) return "Hồng Hùng";
-        if (type == GuzhenrenModEntities.XIONG.get()) return "Hùng";
-        return type.toString();
-    }
 
     private static void checkNapKhi(ServerPlayer sp, CoTienData data) {
         double nk = data.calcNhanKhi();
@@ -248,9 +229,49 @@ public class ThangTienManager {
             return;
         }
 
-        // TODO: remove benminggu item, replace with TienCo
+        // 1. Upgrade to Co Tien status
         guzhenrenVars.zhuanshu = 6.0;
+        // Boost zuida_hunpo (Hồn Phách)
+        guzhenrenVars.zuida_hunpo = Math.max(guzhenrenVars.zuida_hunpo * 2, guzhenrenVars.zuida_hunpo + 5000);
         guzhenrenVars.markSyncDirty();
+
+        // 2. Boost Scoreboard "smz" (Sinh Mệnh Trị → max_health) và "gjl" (Công Kích Lực → attack_damage)
+        //    PlayerShuXingProcedure đọc từ đây để set attribute thực, không phải vars.gongjili
+        if (sp.level() instanceof ServerLevel sl) {
+            var sb = sl.getScoreboard();
+            var criteria = net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY;
+            var renderType = net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER;
+
+            // smz (Sinh Mệnh Trị / HP)
+            var smzObj = sb.getObjective("smz");
+            if (smzObj == null)
+                smzObj = sb.addObjective("smz", criteria, Component.literal("smz"), renderType, true, null);
+            var smzScore = sb.getOrCreatePlayerScore(
+                net.minecraft.world.scores.ScoreHolder.forNameOnly(sp.getScoreboardName()), smzObj);
+            int curSmz = smzScore.get();
+            // Nếu HP > 5000 thì x2, nếu thấp hơn thì +5000
+            if (curSmz > 5000) smzScore.set(curSmz * 2);
+            else smzScore.set(curSmz + 5000);
+
+            // gjl (Công Kích Lực / ATK)
+            var gjlObj = sb.getObjective("gjl");
+            if (gjlObj == null)
+                gjlObj = sb.addObjective("gjl", criteria, Component.literal("gjl"), renderType, true, null);
+            var gjlScore = sb.getOrCreatePlayerScore(
+                net.minecraft.world.scores.ScoreHolder.forNameOnly(sp.getScoreboardName()), gjlObj);
+            int curGjl = gjlScore.get();
+            // Nếu Dame > 10000 thì x2, nếu thấp hơn thì +10000
+            if (curGjl > 10000) gjlScore.set(curGjl * 2);
+            else gjlScore.set(curGjl + 10000);
+
+            // Apply ngay vào attribute thực
+            net.guzhenren.procedures.PlayerShuXingProcedure.execute(sl, sp.getX(), sp.getY(), sp.getZ(), sp);
+            sp.setHealth(sp.getMaxHealth()); // fill HP mới sau khi attribute tăng
+        }
+
+        // 3. Set Custom Nameplate
+        sp.setCustomName(Component.literal("§b[Tiên Cổ] " + sp.getName().getString()));
+        sp.setCustomNameVisible(true);
 
         data.thangTienPhase = 4;
         data.phucDiaGrade = data.calcPhucDiaGrade();
@@ -275,7 +296,7 @@ public class ThangTienManager {
                 "gui.cotienaddon.msg.ascend_success",
                 gradeDisplayName(data.phucDiaGrade)));
 
-        CoTienAddon.LOGGER.info("[CoTienAddon] {} ascended to Co Tien! Grade: {}",
+        CoTienAddon.LOGGER.info("[CoTienAddon] {} ascended to Co Tien! Stats doubled, Name updated. Grade: {}",
                 sp.getName().getString(), data.phucDiaGrade);
     }
 
@@ -326,7 +347,9 @@ public class ThangTienManager {
                 sp.setData(CoTienAttachments.CO_TIEN_DATA.get(), d2);
                 sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                         "§b☯ Bắt đầu Nạp Khí — thiền định 3 phút để hội tụ Thiên Địa Nhân Khí!"));
-                CoTienAddon.LOGGER.info("[CoTienAddon] {} entered Nap Khi phase", sp.getName().getString());
+                // Kích hoạt Thiên Kiếp ngay khi Nạp Khí bắt đầu
+                com.andyanh.cotienaddon.event.PhucDiaEventHandler.startThangTienKiep(sp, d2);
+                CoTienAddon.LOGGER.info("[CoTienAddon] {} entered Nap Khi phase + Thien Kiep triggered", sp.getName().getString());
             }
         });
     }
